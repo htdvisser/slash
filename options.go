@@ -44,7 +44,7 @@ func commandUnknownHandler(ctx context.Context, req Request) interface{} {
 }
 
 // WithCommandUnknownHandler returns a RouterOption that sets the handler for unknown commands.
-func WithCommandUnknownHandler(f func(ctx context.Context, req Request) interface{}) RouterOption {
+func WithCommandUnknownHandler(f HandlerFunc) RouterOption {
 	return routerOption(func(r *Router) {
 		r.commandUnknownHandler = f
 	})

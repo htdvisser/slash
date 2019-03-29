@@ -25,7 +25,7 @@ type Router struct {
 	getTimeDifference     func(timestamp int64) (time.Duration, bool)
 	signingSecret         string
 	commands              map[string]HandlerFunc
-	commandUnknownHandler func(ctx context.Context, req Request) interface{}
+	commandUnknownHandler HandlerFunc
 }
 
 // NewRouter creates a new router for slash commands.
