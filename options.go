@@ -61,3 +61,10 @@ func WithCommandFailedHandler(f HandlerFunc) RouterOption {
 		r.commandFailedHandler = f
 	})
 }
+
+// WithMiddleware returns a RouterOption that sets the middleware that will be called with the matched command handler.
+func WithMiddleware(f MiddlewareFunc) RouterOption {
+	return routerOption(func(r *Router) {
+		r.middleware = f
+	})
+}

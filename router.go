@@ -20,11 +20,15 @@ import (
 // HandlerFunc is a function that handles a slash command.
 type HandlerFunc func(ctx context.Context, req Request) interface{}
 
+// MiddlewareFunc is a function that can be used as middleware in slash command handling.
+type MiddlewareFunc func(next HandlerFunc) HandlerFunc
+
 // Router routes slash commands to their handlers.
 type Router struct {
 	getLogger             func(r *http.Request) Logger
 	getTimeDifference     func(timestamp int64) (time.Duration, bool)
 	signingSecret         string
+	middleware            MiddlewareFunc
 	commands              map[string]HandlerFunc
 	commandUnknownHandler HandlerFunc
 	commandFailedHandler  HandlerFunc
@@ -95,12 +99,19 @@ func (sr *Router) handleCommand(ctx context.Context, w http.ResponseWriter, req 
 			respond(ctx, w, sr.commandFailedHandler(ctx, req))
 		}
 	}()
+
 	commandName := req.Command()
-	if handler, ok := sr.commands[commandName]; ok {
-		respond(ctx, w, handler(ctx, req))
+	handler, ok := sr.commands[commandName]
+	if !ok {
+		respond(ctx, w, sr.commandUnknownHandler(ctx, req))
 		return
 	}
-	respond(ctx, w, sr.commandUnknownHandler(ctx, req))
+
+	if sr.middleware != nil {
+		handler = sr.middleware(handler)
+	}
+
+	respond(ctx, w, handler(ctx, req))
 }
 
 // ServeHTTP implements http.Handler.
