@@ -87,9 +87,11 @@ func (sr *Router) verifyRequest(header http.Header, body []byte) error {
 }
 
 func (sr *Router) handleCommand(ctx context.Context, w http.ResponseWriter, req Request) {
+	logger := loggerFromContext(ctx)
+	logger.Printf("handling command `%s` for @%s of team %s", req.Command(), req.UserName(), req.TeamDomain())
 	defer func() {
 		if r := recover(); r != nil {
-			loggerFromContext(ctx).Printf("panic in command handler: %v\n%s", r, string(debug.Stack()))
+			logger.Printf("panic in command handler: %v\n%s", r, string(debug.Stack()))
 			respond(ctx, w, sr.commandFailedHandler(ctx, req))
 		}
 	}()

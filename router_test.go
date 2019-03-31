@@ -86,6 +86,8 @@ func TestRouter(t *testing.T) {
 
 	params := url.Values{}
 	params.Set("command", "/ping")
+	params.Set("user_name", "user")
+	params.Set("team_domain", "example")
 
 	t.Run("UnknownCommand", func(t *testing.T) {
 		req := buildSlashRequest("00000000000000000000000000000000", time.Now(), params)
