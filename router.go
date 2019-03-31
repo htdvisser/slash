@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ type Router struct {
 	signingSecret         string
 	commands              map[string]HandlerFunc
 	commandUnknownHandler HandlerFunc
+	commandFailedHandler  HandlerFunc
 }
 
 // NewRouter creates a new router for slash commands.
@@ -36,6 +38,7 @@ func NewRouter(signingSecret string, opts ...RouterOption) *Router {
 		signingSecret:         signingSecret,
 		commands:              make(map[string]HandlerFunc),
 		commandUnknownHandler: commandUnknownHandler,
+		commandFailedHandler:  commandFailedHandler,
 	}
 	for _, opt := range opts {
 		opt.apply(r)
@@ -84,6 +87,12 @@ func (sr *Router) verifyRequest(header http.Header, body []byte) error {
 }
 
 func (sr *Router) handleCommand(ctx context.Context, w http.ResponseWriter, req Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			loggerFromContext(ctx).Printf("panic in command handler: %v\n%s", r, string(debug.Stack()))
+			respond(ctx, w, sr.commandFailedHandler(ctx, req))
+		}
+	}()
 	commandName := req.Command()
 	if handler, ok := sr.commands[commandName]; ok {
 		respond(ctx, w, handler(ctx, req))

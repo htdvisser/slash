@@ -49,3 +49,15 @@ func WithCommandUnknownHandler(f HandlerFunc) RouterOption {
 		r.commandUnknownHandler = f
 	})
 }
+
+func commandFailedHandler(ctx context.Context, req Request) interface{} {
+	loggerFromContext(ctx).Printf("failed command `%s`", req.Command())
+	return textResponse(fmt.Sprintf("Sorry <@%s>, something went wrong while handling your `%s` command.", req.UserID(), req.Command()))
+}
+
+// WithCommandFailedHandler returns a RouterOption that sets the handler for failed commands.
+func WithCommandFailedHandler(f HandlerFunc) RouterOption {
+	return routerOption(func(r *Router) {
+		r.commandFailedHandler = f
+	})
+}

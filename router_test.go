@@ -137,4 +137,23 @@ func TestRouter(t *testing.T) {
 			t.Fatalf("Expected request to be accepted, got %v", code)
 		}
 	})
+
+	t.Run("WithPanic", func(t *testing.T) {
+		req := buildSlashRequest("00000000000000000000000000000000", time.Now(), params)
+		rec := httptest.NewRecorder()
+		router := slash.NewRouter("00000000000000000000000000000000")
+		router.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
+			panic("no")
+		})
+		router.ServeHTTP(rec, req)
+		res := rec.Result()
+		if code := res.StatusCode; code != http.StatusOK {
+			t.Fatalf("Expected request to be accepted, got %v", code)
+		}
+		var m map[string]interface{}
+		json.NewDecoder(res.Body).Decode(&m)
+		if text, ok := m["text"].(string); !ok || !strings.HasPrefix(text, "Sorry") {
+			t.Fatalf("Expected response to contain text \"Sorry\", got %v", m["text"])
+		}
+	})
 }
