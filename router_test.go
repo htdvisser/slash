@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -97,8 +98,8 @@ func TestRouter(t *testing.T) {
 		}
 		var m map[string]interface{}
 		json.NewDecoder(res.Body).Decode(&m)
-		if _, ok := m["text"]; !ok {
-			t.Fatal("Expected response to contain text, got nothing")
+		if text, ok := m["text"].(string); !ok || !strings.HasPrefix(text, "Sorry") {
+			t.Fatalf("Expected response to contain text \"Sorry\", got %v", m["text"])
 		}
 	})
 
@@ -115,6 +116,11 @@ func TestRouter(t *testing.T) {
 		res := rec.Result()
 		if code := res.StatusCode; code != http.StatusOK {
 			t.Fatalf("Expected request to be accepted, got %v", code)
+		}
+		var m map[string]interface{}
+		json.NewDecoder(res.Body).Decode(&m)
+		if text, ok := m["text"].(string); !ok || text != "pong" {
+			t.Fatalf("Expected response to contain text \"pong\", got %v", m["text"])
 		}
 	})
 
