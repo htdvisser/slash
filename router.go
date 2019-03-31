@@ -103,7 +103,7 @@ func (sr *Router) handleCommand(ctx context.Context, w http.ResponseWriter, req 
 
 // ServeHTTP implements http.Handler.
 func (sr *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 
 	ctx = newContextWithLogger(ctx, sr.getLogger(r))
