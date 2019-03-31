@@ -136,5 +136,7 @@ func (sr *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sr.handleCommand(ctx, w, Request(params))
+	if _, ok := params["command"]; ok {
+		sr.handleCommand(ctx, w, Request(params))
+	}
 }
