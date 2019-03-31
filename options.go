@@ -40,7 +40,7 @@ func getTimeDifference(timestamp int64) (difference time.Duration, ok bool) {
 
 func commandUnknownHandler(ctx context.Context, req Request) interface{} {
 	loggerFromContext(ctx).Printf("unknown command `%s`", req.Command())
-	return textResponse(fmt.Sprintf("Sorry %s, I don't know how to handle the `%s` command.", req.UserName(), req.Command()))
+	return textResponse(fmt.Sprintf("Sorry <@%s>, I don't know how to handle the `%s` command.", req.UserID(), req.Command()))
 }
 
 // WithCommandUnknownHandler returns a RouterOption that sets the handler for unknown commands.
