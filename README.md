@@ -33,3 +33,7 @@ A router for Slack's [slash commands](https://api.slack.com/slash-commands).
     ```
 
 See the [example on Godoc](https://godoc.org/htdvisser.dev/slash#example-package) for more.
+
+## Next Steps
+
+- Go build something cool and showcase it on [the wiki](https://github.com/htdvisser/slash/wiki).
