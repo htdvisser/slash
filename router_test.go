@@ -89,12 +89,15 @@ func TestRouter(t *testing.T) {
 	params.Set("user_name", "user")
 	params.Set("team_domain", "example")
 
-	t.Run("UnknownCommand", func(t *testing.T) {
+	ping := func(router *slash.Router) *http.Response {
 		req := buildSlashRequest("00000000000000000000000000000000", time.Now(), params)
 		rec := httptest.NewRecorder()
-		router := slash.NewRouter("00000000000000000000000000000000")
 		router.ServeHTTP(rec, req)
-		res := rec.Result()
+		return rec.Result()
+	}
+
+	t.Run("UnknownCommand", func(t *testing.T) {
+		res := ping(slash.NewRouter("00000000000000000000000000000000"))
 		if code := res.StatusCode; code != http.StatusOK {
 			t.Fatalf("Expected request to be accepted, got %v", code)
 		}
@@ -106,16 +109,13 @@ func TestRouter(t *testing.T) {
 	})
 
 	t.Run("WithResponse", func(t *testing.T) {
-		req := buildSlashRequest("00000000000000000000000000000000", time.Now(), params)
-		rec := httptest.NewRecorder()
 		router := slash.NewRouter("00000000000000000000000000000000")
 		router.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
 			return map[string]interface{}{
 				"text": "pong",
 			}
 		})
-		router.ServeHTTP(rec, req)
-		res := rec.Result()
+		res := ping(router)
 		if code := res.StatusCode; code != http.StatusOK {
 			t.Fatalf("Expected request to be accepted, got %v", code)
 		}
@@ -127,28 +127,22 @@ func TestRouter(t *testing.T) {
 	})
 
 	t.Run("WithoutResponse", func(t *testing.T) {
-		req := buildSlashRequest("00000000000000000000000000000000", time.Now(), params)
-		rec := httptest.NewRecorder()
 		router := slash.NewRouter("00000000000000000000000000000000")
 		router.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
 			return nil
 		})
-		router.ServeHTTP(rec, req)
-		res := rec.Result()
+		res := ping(router)
 		if code := res.StatusCode; code != http.StatusOK {
 			t.Fatalf("Expected request to be accepted, got %v", code)
 		}
 	})
 
 	t.Run("WithPanic", func(t *testing.T) {
-		req := buildSlashRequest("00000000000000000000000000000000", time.Now(), params)
-		rec := httptest.NewRecorder()
 		router := slash.NewRouter("00000000000000000000000000000000")
 		router.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
 			panic("no")
 		})
-		router.ServeHTTP(rec, req)
-		res := rec.Result()
+		res := ping(router)
 		if code := res.StatusCode; code != http.StatusOK {
 			t.Fatalf("Expected request to be accepted, got %v", code)
 		}
