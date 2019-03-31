@@ -2,6 +2,14 @@
 
 A router for Slack's [slash commands](https://api.slack.com/slash-commands).
 
+## Preparations
+
+1. Go to Slack's overview of [Your Apps](https://api.slack.com/apps) and create a new App.
+2. After creating the App, find the **Signing Secret** in the **App Credentials** section.  
+    This is what you'll need for the `SLACK_SIGNING_SECRET` environment variable later.
+3. If you already know the URL where you plan to deploy your commands, you can go to **Slash Commands** under **Features**.  
+    For each command that you create, set the **Request URL** to this URL. The URL of the example below ends with `/slash`.
+
 ## Usage
 
 1. Import the package:  
