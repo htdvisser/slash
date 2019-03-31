@@ -24,7 +24,7 @@ func Example() {
 	r := slash.NewRouter(os.Getenv("SLACK_SIGNING_SECRET"))
 
 	// We register the /pseudorandom command that generates a pseudorandom number for the user.
-	r.Register("/pseudorandom", func(ctx context.Context, req slash.Request) interface{} {
+	r.RegisterCommand("/pseudorandom", func(ctx context.Context, req slash.Request) interface{} {
 		n := 10
 		if req.Text() != "" {
 			var err error

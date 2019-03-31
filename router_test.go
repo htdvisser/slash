@@ -110,7 +110,7 @@ func TestRouter(t *testing.T) {
 
 	t.Run("WithResponse", func(t *testing.T) {
 		router := slash.NewRouter("00000000000000000000000000000000")
-		router.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
+		router.RegisterCommand("/ping", func(ctx context.Context, req slash.Request) interface{} {
 			return map[string]interface{}{
 				"text": "pong",
 			}
@@ -128,7 +128,7 @@ func TestRouter(t *testing.T) {
 
 	t.Run("WithoutResponse", func(t *testing.T) {
 		router := slash.NewRouter("00000000000000000000000000000000")
-		router.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
+		router.RegisterCommand("/ping", func(ctx context.Context, req slash.Request) interface{} {
 			return nil
 		})
 		res := ping(router)
@@ -139,7 +139,7 @@ func TestRouter(t *testing.T) {
 
 	t.Run("WithPanic", func(t *testing.T) {
 		router := slash.NewRouter("00000000000000000000000000000000")
-		router.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
+		router.RegisterCommand("/ping", func(ctx context.Context, req slash.Request) interface{} {
 			panic("no")
 		})
 		res := ping(router)

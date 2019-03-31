@@ -23,7 +23,7 @@ A router for Slack's [slash commands](https://api.slack.com/slash-commands).
     ```
 3. Register a slash commands, for example `/ping`:  
     ```go
-    r.Register("/ping", func(ctx context.Context, req slash.Request) interface{} {
+    r.RegisterCommand("/ping", func(ctx context.Context, req slash.Request) interface{} {
     		// ...
     })
     ```

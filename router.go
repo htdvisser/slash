@@ -46,8 +46,8 @@ func NewRouter(signingSecret string, opts ...RouterOption) *Router {
 	return r
 }
 
-// Register registers a slash command and its handler to the Router.
-func (sr *Router) Register(command string, handler HandlerFunc) {
+// RegisterCommand registers a slash command and its handler to the Router.
+func (sr *Router) RegisterCommand(command string, handler HandlerFunc) {
 	sr.commands[command] = handler
 }
 
