@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -90,28 +91,35 @@ func (sr *Router) verifyRequest(header http.Header, body []byte) error {
 	return nil
 }
 
-func (sr *Router) handleCommand(ctx context.Context, w http.ResponseWriter, req Request) {
+// HandleCommand reads the command from the request header+body and returns a response.
+func (sr *Router) HandleCommand(ctx context.Context, header http.Header, body []byte) (s int, h http.Header, b []byte, err error) {
+	if contentType := header.Get("Content-Type"); contentType != "application/x-www-form-urlencoded" {
+		return http.StatusBadRequest, plainResponseHeader, []byte(fmt.Sprintf("requires application/x-www-form-urlencoded, not %s", contentType)), nil
+	}
+	if err := sr.verifyRequest(header, body); err != nil {
+		return errorResponse(ctx, http.StatusUnauthorized, err)
+	}
+	params, err := url.ParseQuery(string(body))
+	if err != nil {
+		return errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("invalid body: %v", err))
+	}
+	req := Request(params)
+	handler, ok := sr.commands[req.Command()]
+	if !ok {
+		return jsonResponse(ctx, sr.commandUnknownHandler(ctx, req))
+	}
 	logger := loggerFromContext(ctx)
 	logger.Printf("handling command `%s` for @%s of team %s", req.Command(), req.UserName(), req.TeamDomain())
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Printf("panic in command handler: %v\n%s", r, string(debug.Stack()))
-			respond(ctx, w, sr.commandFailedHandler(ctx, req))
+			fmt.Fprintf(os.Stderr, "panic in command handler: %v\n%s", r, string(debug.Stack()))
+			s, h, b, err = jsonResponse(ctx, sr.commandFailedHandler(ctx, req))
 		}
 	}()
-
-	commandName := req.Command()
-	handler, ok := sr.commands[commandName]
-	if !ok {
-		respond(ctx, w, sr.commandUnknownHandler(ctx, req))
-		return
-	}
-
 	if sr.middleware != nil {
 		handler = sr.middleware(handler)
 	}
-
-	respond(ctx, w, handler(ctx, req))
+	return jsonResponse(ctx, handler(ctx, req))
 }
 
 // ServeHTTP implements http.Handler.
@@ -122,32 +130,21 @@ func (sr *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = newContextWithLogger(ctx, sr.getLogger(r))
 
 	if r.Method != http.MethodPost {
-		respondWithError(ctx, w, http.StatusMethodNotAllowed, fmt.Errorf("requires POST, not %s", r.Method))
-		return
-	}
-	if contentType := r.Header.Get("Content-Type"); contentType != "application/x-www-form-urlencoded" {
-		respondWithError(ctx, w, http.StatusBadRequest, fmt.Errorf("requires application/x-www-form-urlencoded, not %s", contentType))
+		s, h, b, _ := errorResponse(ctx, http.StatusMethodNotAllowed, fmt.Errorf("requires POST, not %s", r.Method))
+		writeResponse(w, s, h, b)
 		return
 	}
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, maxBodySize))
 	if err != nil {
-		respondWithError(ctx, w, http.StatusInternalServerError, err)
+		s, h, b, _ := errorResponse(ctx, http.StatusBadRequest, err)
+		writeResponse(w, s, h, b)
 		return
 	}
 
-	if err := sr.verifyRequest(r.Header, body); err != nil {
-		respondWithError(ctx, w, http.StatusUnauthorized, err)
-		return
-	}
-
-	params, err := url.ParseQuery(string(body))
+	s, h, b, err := sr.HandleCommand(ctx, r.Header, body)
 	if err != nil {
-		respondWithError(ctx, w, http.StatusBadRequest, fmt.Errorf("invalid body: %v", err))
-		return
+		s, h, b, _ = errorResponse(ctx, http.StatusInternalServerError, err)
 	}
-
-	if _, ok := params["command"]; ok {
-		sr.handleCommand(ctx, w, Request(params))
-	}
+	writeResponse(w, s, h, b)
 }

@@ -16,27 +16,43 @@ func (r textResponse) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func respond(ctx context.Context, w http.ResponseWriter, msg interface{}) error {
+var plainResponseHeader = func() http.Header {
+	header := make(http.Header)
+	header.Set("Content-Type", "text/plain")
+	return header
+}()
+
+func errorResponse(ctx context.Context, status int, err error) (int, http.Header, []byte, error) {
+	loggerFromContext(ctx).Printf("fail with error: %v", err)
+	return status, plainResponseHeader, []byte(fmt.Sprintf("%s: %v", http.StatusText(status), err)), nil
+}
+
+var jsonResponseHeader = func() http.Header {
+	header := make(http.Header)
+	header.Set("Content-Type", "application/json")
+	return header
+}()
+
+func jsonResponse(ctx context.Context, msg interface{}) (int, http.Header, []byte, error) {
 	logger := loggerFromContext(ctx)
 	if msg == nil {
 		logger.Print("finish without response")
-		return nil
+		return http.StatusOK, nil, nil, nil
 	}
 	logger.Print("finish with response")
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	b, err := json.Marshal(msg)
+	header := make(http.Header)
+	header.Set("Content-Type", "application/json")
+	body, err := json.Marshal(msg)
 	if err != nil {
-		return err
+		return http.StatusInternalServerError, nil, nil, err
 	}
-	_, err = w.Write(b)
-	return err
+	return http.StatusOK, header, body, nil
 }
 
-func respondWithError(ctx context.Context, w http.ResponseWriter, code int, err error) error {
-	loggerFromContext(ctx).Printf("fail with error: %v", err)
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(code)
-	_, writeErr := fmt.Fprintf(w, "%s: %v", http.StatusText(code), err)
-	return writeErr
+func writeResponse(w http.ResponseWriter, status int, header http.Header, body []byte) {
+	for k := range header {
+		w.Header().Set(k, header.Get(k))
+	}
+	w.WriteHeader(status)
+	w.Write(body)
 }
